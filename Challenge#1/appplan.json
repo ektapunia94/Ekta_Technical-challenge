@@ -4,38 +4,36 @@
   "parameters": {
     "appServiceName": {
       "type": "string",
-      "defaultValues" : "" 
+      "defaultValues" : "service01" 
     },
     "appServicePlanName": {
       "type": "string",
-      "minLength": 1
+      "defaultValue": "sampleplan"
     },
-    "appServicePlanSkuName": {
+    "Sku": {
       "type": "string",
       "defaultValue": "S1",
       "metadata": {
-        "description": "Describes plan's pricing tier and capacity. Check details at https://azure.microsoft.com/en-us/pricing/details/app-service/"
+        "description": "This describes app plan capacity and price tier"
       }
+    },
+    "location" : {
+    "type" : "string",
+    "defaultValue": "West Europe"
     }
   },
-  "variables": {
-    "appHostingPlanNameVar": "[concat(parameters('appServicePlanName'),'-apps')]"
-   },
   "resources": [
     {
-      "name": "[variables('appHostingPlanNameVar')]",
+      "name": "[parameters('appServicePlanName')]",
       "type": "Microsoft.Web/serverfarms",
-      "location": "[resourceGroup().location]",
+      "location": "[]",
       "apiVersion": "2015-08-01",
       "sku": {
-        "name": "[parameters('appServicePlanSkuName')]"
+        "name": "[parameters('Sku')]"
       },
       "dependsOn": [ ],
-      "tags": {
-        "displayName": "appServicePlan"
-      },
       "properties": {
-        "name": "[variables('appHostingPlanNameVar')]",
+        "name": "[parameters('appServicePlanName')]",
         "numberOfWorkers": 1
       }
     },
@@ -45,15 +43,11 @@
       "location": "[resourceGroup().location]",
       "apiVersion": "2015-08-01",
       "dependsOn": [
-        "[resourceId('Microsoft.Web/serverfarms', variables('appHostingPlanNameVar'))]"
+        "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]"
       ],
-      "tags": {
-        "[concat('hidden-related:', resourceId('Microsoft.Web/serverfarms', variables('appHostingPlanNameVar')))]": "Resource",
-        "displayName": "webApp"
-      },
       "properties": {
         "name": "[parameters('appServiceName')]",
-        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appHostingPlanNameVar'))]"
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]"
       }
     }],
   "outputs": {}
