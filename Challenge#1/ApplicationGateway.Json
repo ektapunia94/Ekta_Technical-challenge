@@ -1,0 +1,137 @@
+﻿{
+	"$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"appGatewayName": {
+			"type": "string",
+			"defaultvalue": "appGateway",
+			"metadata": {
+				"description": "Name of the application gateway"
+			}
+		},
+		"location": {
+			"type": "string",
+			"defaultValue": "West Europe",
+			"metadata": {
+				"description": "Location for application gateway."
+			}
+		},
+		"capacity": {
+			"type": "Int",
+			"defaultValue": 2,
+			"metadata": {
+				"description": "Number of instances"
+			}
+		},
+		"sku": {
+			"type": "string",
+			"defaultValue": "Standard_v2"
+		},
+		"variables": {
+			"VnetName": "vNet",
+			"AppgatewayPublicIP": "appGatewaypubIP",
+			"subnetName": "subnet01"
+		},
+		"resources": [{
+				"type": "Microsoft.Network/publicIPAddresses",
+				"apiVersion": "2020-06-01",
+				"name": "[variables('AppgatewayPublicIP')]",
+				"location": "[parameters('location')]",
+				"sku": {
+					"name": "Standard"
+				},
+				"properties": {
+					"publicIPAddressVersion": "IPv4",
+					"publicIPAllocationMethod": "Static"
+				}
+			},
+
+			{
+				"type": "Microsoft.Network/applicationGateways",
+				"apiVersion": "2020-06-01",
+				"name": "[parameters('AppGatewayName')]",
+				"location": "[parameters('location')]",
+				"dependsOn": [
+					"[resourceId('Microsoft.Network/virtualNetworks', variables('VnetName'))]",
+					"[resourceId('Microsoft.Network/publicIPAddresses',variables('AppgatewayPublicIP') )]"
+				],
+				"properties": {
+					"sku": {
+						"name": "standard",
+						"tier": "[parameters('sku')]",
+						"capacity": "[parameters('capacity')]"
+					},
+					"gatewayIPConfigurations": [{
+						"name": "IpConfigAppGateway",
+						"properties": {
+							"subnet": {
+								"id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('VnetName'), variables('subnetName'))]"
+							}
+						}
+					}],
+					"frontendIPConfigurations": [{
+						"name": "frontendIPConfigAppGateway",
+						"properties": {
+							"privateIPAllocationMethod": "static",
+							"publicIPAddress": {
+								"id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('AppgatewayPublicIP') )]"
+							}
+						}
+					}],
+					"frontendPorts": [{
+						"name": "port_80",
+						"properties": {
+							"port": 80
+						}
+					}],
+					"backendAddressPools": [{
+						"name": "backendpool",
+						"properties": {}
+					}],
+					"backendHttpSettingsCollection": [{
+						"name": "hTTPSetting",
+						"properties": {
+							"port": 80,
+							"protocol": "Http",
+							"cookieBasedAffinity": "Disabled",
+							"requestTimeout": 10
+						}
+					}],
+					"httpListeners": [{
+						"name": "httpListener",
+						"properties": {
+							"frontendIPConfiguration": {
+								"id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', variables('AppGatewayName'), 'frontendIPConfigAppGateway')]"
+							},
+							"frontendPort": {
+								"id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', variables('AppGatewayName'), 'port_80')]"
+							},
+							"protocol": "Http",
+							"requireServerNameIndication": false
+						}
+					}],
+					"requestRoutingRules": [{
+						"name": "appGatewayRoutingRule",
+						"properties": {
+							"ruleType": "Basic",
+							"httpListener": {
+								"id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', variables('AppGatewayName'), 'httpListener')]"
+							},
+							"backendAddressPool": {
+								"id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', variables('AppGatewayName'), 'backendPool')]"
+							},
+							"backendHttpSettings": {
+								"id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', variables('AppGatewayName'), 'hTTPSetting')]"
+							}
+						}
+					}],
+					"autoscaleConfiguration": {
+						"minCapacity": 0,
+						"maxCapacity": 10
+					}
+				}
+
+			}
+		]
+	}
+}
