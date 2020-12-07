@@ -1,0 +1,6 @@
+For 3 tier architecture, 
+we have web tier, data tier and application tier.
+
+All the resources for 3 tier architecture  is getting deployed using Arm Template.
+We can use azure cli to deploy all the resources.
+New-azurermresourcegroupdeployment -resourcegroup <resourcegroup> -templatefile <path to template file> -parameters <list of parameters if any>
